@@ -1,8 +1,9 @@
-import torch
 from vgg import *
 
-print(torch.__version__)
+print("Loading model...")
 
-model = vgg16_bn()
+model = vgg11()
 
 print(model)
+
+print("Model parameters: {}".format(sum(p.numel() for p in model.parameters())))

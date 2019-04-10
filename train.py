@@ -1,5 +1,6 @@
 from vgg import *
 from torch import nn, optim
+from torchvision import transforms
 from data_loaders import *
 
 
@@ -12,17 +13,27 @@ images_path = os.path.join(data_base_dir, "images/")
 
 # Hyper Parameters
 num_classes = 8
-batch_size = 10
+batch_size = 8
 num_epochs = 1
+resize_factor = 2
+input_size = 1024
+resize = input_size//resize_factor
+
+trans_list = []
+if resize_factor > 1:
+    trans_list += [transforms.Resize(resize)]
+
+trans_list += [transforms.ToTensor()]
+trans = transforms.Compose(trans_list)
 
 # Data loaders
 train_data = ChestXRayDataset(csv_file=train_metadata_path,
                              root_dir=images_path,
-                             transform=transforms.Compose([transforms.ToTensor()]))
+                             transform=trans)
 
 test_data = ChestXRayDataset(csv_file=test_metadata_path,
                              root_dir=images_path,
-                             transform=transforms.Compose([transforms.ToTensor()]))
+                             transform=trans)
 
 
 train_loader = torch.utils.data.DataLoader(dataset=train_data,
@@ -36,7 +47,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_data,
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-model = vgg11(num_classes=num_classes)
+model = vgg11(size=resize, num_classes=num_classes)
 
 if torch.cuda.is_available():
     model.cuda()
@@ -65,10 +76,8 @@ for epoch in range(num_epochs):
 
         # Forward
         outputs = model(inputs)
-        loss = criterion(outputs, labels)
+        loss = criterion(outputs.double(), labels)
 
         # Backward
         loss.backward()
         optimizer.step()
-
-        x=0

@@ -22,12 +22,13 @@ model_urls = {
 
 class VGG(nn.Module):
 
-    def __init__(self, features, num_classes=1000, init_weights=True):
+    def __init__(self, features, size=244, num_classes=1000, init_weights=True):
         super(VGG, self).__init__()
+        reduction = size//(2**5)
         self.features = features
-        self.avgpool = nn.AdaptiveAvgPool2d((32, 32))
+        self.avgpool = nn.AdaptiveAvgPool2d((reduction, reduction))
         self.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),
+            nn.Linear(512 * reduction * reduction, 4096),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, 4096),

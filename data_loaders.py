@@ -2,11 +2,10 @@ from __future__ import print_function, division
 import torch
 import pandas as pd
 import numpy as np
-from skimage import io, transform
+from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from data_utils import *
-
 
 class ChestXRayDataset(Dataset):
 
@@ -38,7 +37,7 @@ class ChestXRayDataset(Dataset):
     def __getitem__(self, idx):
         img_name = self.metadata_df.iloc[idx, 0]
         img_path = os.path.join(self.root_dir, img_name)
-        image = io.imread(img_path, as_gray=True)
+        image = Image.open(img_path)
         label_str = self.metadata_df.iloc[idx, 1]
         label_arr = self.get_label_array(label_str)
 

@@ -3,16 +3,9 @@ import torch
 import pandas as pd
 import numpy as np
 from skimage import io, transform
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from data_utils import *
-
-
-base_dir = "/home/tomron27@st.technion.ac.il/"
-data_base_dir = os.path.join(base_dir, "projects/ChestXRay/data/fetch/")
-train_metadata_path = os.path.join(data_base_dir, "train_metadata.csv")
-test_metadata_path = os.path.join(data_base_dir, "test_metadata.csv")
-images_path = os.path.join(data_base_dir, "images/")
 
 
 class ChestXRayDataset(Dataset):
@@ -45,7 +38,7 @@ class ChestXRayDataset(Dataset):
     def __getitem__(self, idx):
         img_name = self.metadata_df.iloc[idx, 0]
         img_path = os.path.join(self.root_dir, img_name)
-        image = io.imread(img_path, as_grey=True)
+        image = io.imread(img_path, as_gray=True)
         label_str = self.metadata_df.iloc[idx, 1]
         label_arr = self.get_label_array(label_str)
 
@@ -55,27 +48,4 @@ class ChestXRayDataset(Dataset):
             sample["image"] = self.transform(sample["image"])
 
         return sample
-
-
-train_data = ChestXRayDataset(csv_file=train_metadata_path,
-                             root_dir=images_path,
-                             transform=transforms.Compose([transforms.ToTensor()]))
-
-test_data = ChestXRayDataset(csv_file=test_metadata_path,
-                             root_dir=images_path,
-                             transform=transforms.Compose([transforms.ToTensor()]))
-
-
-train_loader = torch.utils.data.DataLoader(dataset=train_data,
-                                          batch_size=10,
-                                          shuffle=True)
-
-test_loader = torch.utils.data.DataLoader(dataset=test_data,
-                                          batch_size=10,
-                                          shuffle=True)
-
-for i, sample in enumerate(train_loader):
-    print(i, sample["label_str"])
-    break
-    # split_train_test(data_base_dir)
 

@@ -1,0 +1,23 @@
+
+
+https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+wget -O /tmp/myfile 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
+
+$ export PATH=/usr/bin/anaconda/bin:$PATH
+
+
+/home/tomron27@st.technion.ac.il/miniconda3/bin/
+
+/home/tomron27@st.technion.ac.il/projects/PyTorch_Test/
+
+
+for i in 01 02 03 04 05 06 07 08 09 10 11 12
+do
+   echo "Extracting images_$i.tar.gz..."
+   tar xzf images_$i.tar.gz
+done
+
+rm -r images
+
+find . -type f | wc -l

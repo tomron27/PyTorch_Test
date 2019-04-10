@@ -1,8 +1,9 @@
 from vgg import *
+from torch import nn, optim
 from data_loaders import *
 
 
-# Paths
+# Data paths
 base_dir = "/home/tomron27@st.technion.ac.il/"
 data_base_dir = os.path.join(base_dir, "projects/ChestXRay/data/fetch/")
 train_metadata_path = os.path.join(data_base_dir, "train_metadata.csv")
@@ -10,7 +11,9 @@ test_metadata_path = os.path.join(data_base_dir, "test_metadata.csv")
 images_path = os.path.join(data_base_dir, "images/")
 
 # Hyper Parameters
+num_classes = 8
 batch_size = 10
+num_epochs = 1
 
 # Data loaders
 train_data = ChestXRayDataset(csv_file=train_metadata_path,
@@ -29,7 +32,43 @@ train_loader = torch.utils.data.DataLoader(dataset=train_data,
 test_loader = torch.utils.data.DataLoader(dataset=test_data,
                                           batch_size=batch_size,
                                           shuffle=True)
+
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+model = vgg11(num_classes=num_classes)
+
+if torch.cuda.is_available():
+    model.cuda()
+
+# print(model)
+# num_params = sum((p.numel() for p in model.parameters()))
+# print(num_params)
+
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+criterion = nn.BCEWithLogitsLoss()
+
 # Train procedure
-for i, sample in enumerate(train_loader):
-    print(i, sample["label_str"])
-    break
+
+model.train()
+
+for epoch in range(num_epochs):
+    print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+    print('-' * 10)
+
+    for i, sample in enumerate(train_loader):
+        inputs = sample["image"].to(device)
+        labels = sample["label"].to(device)
+
+        optimizer.zero_grad()
+
+        # Forward
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
+
+        # Backward
+        loss.backward()
+        optimizer.step()
+
+        x=0

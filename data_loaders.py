@@ -22,7 +22,7 @@ class ChestXRayDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.labels_dict = {"Atelectasis": 0, "Cardiomegaly": 1, "Effusion": 2, "Infiltration": 3,
-               "Mass": 4, "Nodule": 5, "Normal": 6, "Pneumonia": 7, "Pneumothorax": 8}
+               "Mass": 4, "Nodule": 5, "Pneumonia": 6, "Pneumothorax": 7}
 
     def get_label_array(self, label_string):
         label_list = label_string.split("|")

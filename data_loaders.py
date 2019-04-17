@@ -37,7 +37,7 @@ class ChestXRayDataset(Dataset):
     def __getitem__(self, idx):
         img_name = self.metadata_df.iloc[idx, 0]
         img_path = os.path.join(self.root_dir, img_name)
-        image = Image.open(img_path)
+        image = Image.open(img_path).convert('L')
         label_str = self.metadata_df.iloc[idx, 1]
         label_arr = self.get_label_array(label_str)
 

@@ -1,8 +1,10 @@
 from vgg import *
 import torch
 from torchvision import transforms
+from torch.utils.data import Subset
 from data_loaders import *
 import time
+import json
 
 
 # Data paths
@@ -17,18 +19,20 @@ model_dir = os.path.join(project_dir, "models/")
 
 # Hyper Parameters
 num_classes = 8
-batch_size = 2
-num_epochs = 1
-print_interval = 1000
-resize_factor = 2
+batch_size = 1
+num_epochs = 10
+print_interval = 100
 input_size = 1024
+resize_factor = 2
 resize = input_size//resize_factor
+subset = True
+subset_size = 2000
 
 trans_list = []
 if resize_factor > 1:
     trans_list += [transforms.Resize(resize)]
 
-trans_list += [transforms.ToTensor()]
+trans_list += [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
 trans = transforms.Compose(trans_list)
 
 # Data loaders
@@ -40,6 +44,10 @@ test_data = ChestXRayDataset(csv_file=test_metadata_path,
                              root_dir=images_path,
                              transform=trans)
 
+# For testing purposes
+if subset:
+    test_data = Subset(test_data, range(subset_size))
+    train_data = Subset(train_data, range(subset_size))
 
 train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                           batch_size=batch_size,
@@ -49,33 +57,32 @@ test_loader = torch.utils.data.DataLoader(dataset=test_data,
                                           batch_size=batch_size,
                                           shuffle=True)
 
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 model = vgg16_bn(size=resize, num_classes=num_classes)
 
-if torch.cuda.is_available():
-    model.cuda()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
 # print(model)
 # num_params = sum((p.numel() for p in model.parameters()))
 # print(num_params)
 
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9)
 
 criterion = torch.nn.BCEWithLogitsLoss()
 
 # Train procedure
-
-model.train()
-
 start = time.time()
-
+loss_list = []
 for epoch in range(num_epochs):
-    print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+    print('Epoch {}/{}'.format(epoch+1, num_epochs))
     print('-' * 10)
 
-    running_loss = 0.0
+    batch_train_running_loss = 0.0
+    epoch_train_running_loss = 0.0
+    batch_test_running_loss = 0.0
+    epoch_test_running_loss = 0.0
+
+    model.train()
     for i, sample in enumerate(train_loader):
 
         inputs = sample["image"].to(device)
@@ -92,23 +99,59 @@ for epoch in range(num_epochs):
             loss.backward()
             optimizer.step()
 
-            # print statistics
-            running_loss += loss.item()
+            # log and print batch statistics
+            batch_train_running_loss += loss.item()
+            epoch_train_running_loss += loss.item()
             if i % print_interval == print_interval - 1:
-                print('[%d, %5d] loss: %.3f, %.2f mins' %
-                      (epoch + 1, (i+1)*batch_size, running_loss / print_interval*batch_size, (time.time()-start)/60))
-                running_loss = 0.0
+                print('Train: [%d, %5d] loss: %.3f, %.2f mins' %
+                      (epoch + 1, (i+1)*batch_size, batch_train_running_loss / print_interval*batch_size, (time.time()-start)/60))
+                batch_train_running_loss = 0.0
 
                 # assertion
                 # with torch.no_grad():
                 #     print(sample["image_name"], sample["label"], outputs)
 
         except Exception as e:
-            print(e)
+            print("Error on training:", e)
             print(sample["image_name"])
 
-    torch.save({
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-    }, os.path.join(model_dir, "vgg_16_bn_epoch_{}.pt".format(epoch + 1)))
+    loss_list.append(('train', 'epoch_{}'.format(epoch+1), epoch_train_running_loss / len(train_loader), time.time()-start/60))
+    epoch_train_running_loss = 0.0
+
+    # Test Procedure
+    model.eval()
+    for i, sample in enumerate(test_loader):
+        inputs = sample["image"].to(device)
+        labels = sample["label"].to(device)
+
+        try:
+            outputs = model(inputs)
+            loss = criterion(outputs.double(), labels)
+
+            # print batch statistics
+            batch_test_running_loss += loss.item()
+            epoch_test_running_loss += loss.item()
+            if i % print_interval == print_interval - 1:
+                print('Test:  [%d, %5d] loss: %.3f, %.2f mins' %
+                      (epoch + 1, (i+1)*batch_size, batch_test_running_loss / print_interval*batch_size, (time.time()-start)/60))
+                batch_test_running_loss = 0.0
+
+        except Exception as e:
+            print("Error on testing:", e)
+            print(sample["image_name"])
+
+    loss_list.append(('test', 'epoch_{}'.format(epoch+1), epoch_test_running_loss / len(test_loader), time.time()-start/60))
+    epoch_test_running_loss = 0.0
+
+    # # Save Model
+    # torch.save({
+    #     'epoch': epoch,
+    #     'model_state_dict': model.state_dict(),
+    #     'optimizer_state_dict': optimizer.state_dict(),
+    # }, os.path.join(model_dir, "vgg_16_bn_epoch_{}.pt".format(epoch + 1)))
+
+# Log loss results
+with open('loss_log.json', 'w') as out:
+    json.dump(loss_list, out)
+
+

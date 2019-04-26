@@ -3,13 +3,13 @@ import torch
 import pandas as pd
 import numpy as np
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Subset
 from torchvision import transforms
 from data_utils import *
 
 class ChestXRayDataset(Dataset):
 
-    def __init__(self, csv_file, root_dir, transform=None):
+    def __init__(self, csv_file, root_dir, transform=None, subset=False):
         """
         Args:
             csv_file (string): Path to the csv file with labels.
@@ -22,6 +22,7 @@ class ChestXRayDataset(Dataset):
         self.transform = transform
         self.labels_dict = {"Atelectasis": 0, "Cardiomegaly": 1, "Effusion": 2, "Infiltration": 3,
                "Mass": 4, "Nodule": 5, "Pneumonia": 6, "Pneumothorax": 7}
+
 
     def get_label_array(self, label_string):
         label_list = label_string.split("|")

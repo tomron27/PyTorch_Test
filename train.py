@@ -25,7 +25,7 @@ print_interval = 2000
 input_size = 1024
 resize_factor = 2
 resize = input_size//resize_factor
-subset = True
+subset = False
 subset_size = 2000
 
 trans_list = []
@@ -115,7 +115,7 @@ for epoch in range(num_epochs):
             print("Error on training:", e)
             print(sample["image_name"])
 
-    loss_list.append(('train', 'epoch_{}'.format(epoch+1), epoch_train_running_loss / len(train_loader), time.time()-start/60))
+    loss_list.append(('train', 'epoch_{}'.format(epoch+1), epoch_train_running_loss / len(train_loader), (time.time()-start)/60))
     epoch_train_running_loss = 0.0
 
     # Test Procedure
@@ -140,15 +140,15 @@ for epoch in range(num_epochs):
             print("Error on testing:", e)
             print(sample["image_name"])
 
-    loss_list.append(('test', 'epoch_{}'.format(epoch+1), epoch_test_running_loss / len(test_loader), time.time()-start/60))
+    loss_list.append(('test', 'epoch_{}'.format(epoch+1), epoch_test_running_loss / len(test_loader), (time.time()-start)/60))
     epoch_test_running_loss = 0.0
 
-    # # Save Model
-    # torch.save({
-    #     'epoch': epoch,
-    #     'model_state_dict': model.state_dict(),
-    #     'optimizer_state_dict': optimizer.state_dict(),
-    # }, os.path.join(model_dir, "vgg_16_bn_epoch_{}.pt".format(epoch + 1)))
+    # Save Model
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, os.path.join(model_dir, "vgg_16_bn_norm_epoch_{}.pt".format(epoch + 1)))
 
 # Log loss results
 with open('loss_log.json', 'w') as out:

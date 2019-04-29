@@ -27,7 +27,7 @@ image_2 = trans(Image.open(image_path_2).convert('L')).to(device).unsqueeze(0)
 model = vgg16_bn(size=512, num_classes=8)
 model.to(device)
 
-checkpoint = torch.load(os.path.join(model_dir, "vgg_16_bn_epoch_1.pt"))
+checkpoint = torch.load(os.path.join(model_dir, "vgg_16_bn_epoch_6.pt"))
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 

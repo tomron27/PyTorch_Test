@@ -128,7 +128,7 @@ for epoch in range(num_epochs):
             outputs = model(inputs)
             loss = criterion(outputs.double(), labels)
 
-            # print batch statistics
+            # log and print batch statistics
             batch_test_running_loss += loss.item()
             epoch_test_running_loss += loss.item()
             if i % print_interval == print_interval - 1:

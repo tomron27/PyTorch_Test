@@ -1,6 +1,9 @@
 import shutil
 import os
 import matplotlib.pyplot as plt
+from torch.nn import Softmax
+import numpy as np
+from sklearn.metrics import roc_auc_score
 
 
 # print('Image name: {}'.format(img_name))
@@ -39,6 +42,37 @@ def plot_sample(data, size, output_dir):
 
     plt.savefig(os.path.join(output_dir, "fig.png"))
 
+
+def validate(model, device, data_loader, labels_dict, logger):
+
+    logger.info("Validating model")
+    y_arr = np.zeros(shape=(len(data_loader), len(labels_dict)), dtype=np.float64)
+    y_pred_arr = np.zeros(shape=(len(data_loader), len(labels_dict)), dtype=np.float64)
+
+    for i, sample in enumerate(data_loader):
+
+        if i % 200 == 0:
+            logger.info("image num {:04d}...".format(i))
+
+        inputs = sample["image"].to(device)
+        labels = sample["label"].to(device)
+
+        outputs = model(inputs)
+        sftmax = Softmax()(outputs)
+
+        # sftmax[sftmax >= tau] = 1.0
+        # sftmax[sftmax < tau] = 0.0
+
+        y_arr[i] = labels.cpu().detach().numpy()[0]
+        y_pred_arr[i] = sftmax.cpu().detach().numpy()[0]
+
+    for i, label in enumerate(labels_dict.keys()):
+        
+        class_y_pred = y_pred_arr[:, i:i + 1].reshape(y_pred_arr.shape[0])
+        class_y = y_arr[:, i:i + 1].reshape(y_arr.shape[0])
+
+        roc_auc = roc_auc_score(class_y, class_y_pred)
+        logger.info("  Class: '{}', roc auc: {:.4f}".format(label, roc_auc))
 
 # def split_train_test(source):
 #

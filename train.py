@@ -77,7 +77,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_data,
                                           shuffle=True)
 
 # Model
-model = vgg16_bn(size=resize, num_classes=num_classes, pretrained=True)
+model = vgg16_bn(size=resize, num_classes=num_classes)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model.to(device)
@@ -169,11 +169,13 @@ for epoch in range(num_epochs):
     epoch_test_running_loss = 0.0
 
     # Save Model
-    torch.save({
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-    }, join(model_dir, "vgg_16_bn_norm_epoch_{}.pt".format(epoch + 1)))
+    if (epoch + 1) % 5 == 0:
+
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+        }, join(model_dir, "20_epochs", "vgg_16_bn_norm_epoch_{}.pt".format(epoch + 1)))
 
 # Log loss results
 with open('loss_log.json', 'w') as out:

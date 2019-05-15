@@ -67,7 +67,7 @@ def validate(model, device, data_loader, labels_dict, logger):
         y_pred_arr[i] = sftmax.cpu().detach().numpy()[0]
 
     for i, label in enumerate(labels_dict.keys()):
-        
+
         class_y_pred = y_pred_arr[:, i:i + 1].reshape(y_pred_arr.shape[0])
         class_y = y_arr[:, i:i + 1].reshape(y_arr.shape[0])
 

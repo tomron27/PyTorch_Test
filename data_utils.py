@@ -49,9 +49,10 @@ def validate(model, device, data_loader, labels_dict, logger):
     y_arr = np.zeros(shape=(len(data_loader), len(labels_dict)), dtype=np.float64)
     y_pred_arr = np.zeros(shape=(len(data_loader), len(labels_dict)), dtype=np.float64)
 
+    print_freq = int(0.1*(len(data_loader)))
     for i, sample in enumerate(data_loader):
 
-        if i % 200 == 0:
+        if i % print_freq == 0:
             logger.info("image num {:04d}...".format(i))
 
         inputs = sample["image"].to(device)

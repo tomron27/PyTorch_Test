@@ -4,6 +4,7 @@ from vgg import *
 from PIL import Image
 from torchvision import transforms
 from data_loaders import *
+from data_utils import validate
 from os.path import join
 from sklearn.metrics import multilabel_confusion_matrix as MCM
 from sklearn.metrics import roc_auc_score
@@ -64,31 +65,5 @@ checkpoint = torch.load(join(model_dir, "20_epochs", "vgg_16_bn_norm_epoch_5.pt"
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
-# Iterate data
-y_true_arr = np.zeros(shape=(len(data_loader), len(data.labels_dict)), dtype=np.float64)
-y_pred_arr = np.zeros(shape=(len(data_loader), len(data.labels_dict)), dtype=np.float64)
-
-for i, sample in enumerate(data_loader):
-
-    if i % 2000 == 0:
-        logger.info("{:05d}...".format(i))
-
-    inputs = sample["image"].to(device)
-    labels = sample["label"].to(device)
-
-    outputs = model(inputs)
-    sftmax = torch.nn.Softmax()(outputs)
-
-    # sftmax[sftmax >= tau] = 1.0
-    # sftmax[sftmax < tau] = 0.0
-
-    y_true_arr[i] = labels.cpu().detach().numpy()[0]
-    y_pred_arr[i] = sftmax.cpu().detach().numpy()[0]
-
-# mcm = MCM(y_true_arr, y_pred_arr)
-#
-# logger.info(mcm)
-
-logger.info("Saving predictions...")
-np.save("test_labels.npy", y_true_arr)
-np.save("test_pred.npy", y_pred_arr)
+# Validate
+validate(model, device, data_loader, data.labels_dict, logger)
